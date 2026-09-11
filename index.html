@@ -269,13 +269,25 @@ hr{
 
 .land-box{
     position:absolute;
-    left:150px;
-    top:110px;
-    width:300px;
-    height:220px;
+
+    left:180px;
+    top:140px;
+
+    width:240px;
+    height:160px;
+
+    min-width:120px;
+    min-height:80px;
+
     border:2px solid #000;
     background:#fff;
     z-index:5;
+
+    transition:
+        width .15s ease,
+        height .15s ease,
+        left .15s ease,
+        top .15s ease;
 }
 
 
@@ -1415,7 +1427,324 @@ document.addEventListener("keydown", function(e) {
     }
 });
 </script>
-     
+     <script>
+/* =========================================
+   SMART 4-SIDE AUTO SHRINK
+   =========================================
+
+   Kisi bhi direction ka text bada hoga:
+   → Box chaaro taraf se proportionally shrink hoga
+   → Box ka CENTER fixed rahega
+*/
+
+
+function autoShrinkLandBox(){
+
+    const box = document.querySelector(".land-box");
+    const naksha = document.querySelector(".naksha");
+
+    const north = document.getElementById("mapNorth");
+    const south = document.getElementById("mapSouth");
+    const west  = document.getElementById("mapWest");
+    const east  = document.getElementById("mapEast");
+
+    if(!box || !naksha) return;
+
+
+    /* =====================================
+       ORIGINAL / MAXIMUM SIZE
+       ===================================== */
+
+    const MAX_WIDTH  = 240;
+    const MAX_HEIGHT = 160;
+
+
+    /* =====================================
+       MINIMUM SIZE
+       ===================================== */
+
+    const MIN_WIDTH  = 120;
+    const MIN_HEIGHT = 80;
+
+
+    /* Text aur box ke beech minimum gap */
+    const GAP = 8;
+
+
+    /* =====================================
+       BOX CENTER
+       =====================================
+
+       Original:
+       left = 180
+       top  = 140
+       width  = 240
+       height = 160
+
+       Center:
+       X = 300
+       Y = 220
+    */
+
+    const CENTER_X = 300;
+    const CENTER_Y = 220;
+
+
+    const nakshaRect =
+        naksha.getBoundingClientRect();
+
+
+    /* =====================================
+       ELEMENT POSITION
+       ===================================== */
+
+    function getRect(element){
+
+        if(!element) return null;
+
+        const r =
+            element.getBoundingClientRect();
+
+        return {
+            left:   r.left   - nakshaRect.left,
+            right:  r.right  - nakshaRect.left,
+            top:    r.top    - nakshaRect.top,
+            bottom: r.bottom - nakshaRect.top
+        };
+    }
+
+
+    const N = getRect(north);
+    const S = getRect(south);
+    const W = getRect(west);
+    const E = getRect(east);
+
+
+    /* =====================================
+       AVAILABLE SPACE
+       ===================================== */
+
+    let availableLeft   = Infinity;
+    let availableRight  = Infinity;
+    let availableTop    = Infinity;
+    let availableBottom = Infinity;
+
+
+    /*
+       LEFT / WEST
+    */
+
+    if(W){
+
+        availableLeft =
+            CENTER_X - W.right - GAP;
+    }
+
+
+    /*
+       RIGHT / EAST
+    */
+
+    if(E){
+
+        availableRight =
+            E.left - CENTER_X - GAP;
+    }
+
+
+    /*
+       TOP / NORTH
+    */
+
+    if(N){
+
+        availableTop =
+            CENTER_Y - N.bottom - GAP;
+    }
+
+
+    /*
+       BOTTOM / SOUTH
+    */
+
+    if(S){
+
+        availableBottom =
+            S.top - CENTER_Y - GAP;
+    }
+
+
+    /* =====================================
+       AVAILABLE FULL WIDTH / HEIGHT
+       ===================================== */
+
+    const availableWidth =
+        2 * Math.min(
+            availableLeft,
+            availableRight
+        );
+
+
+    const availableHeight =
+        2 * Math.min(
+            availableTop,
+            availableBottom
+        );
+
+
+    /* =====================================
+       SHRINK FACTOR
+       =====================================
+
+       IMPORTANT:
+
+       Agar LEFT text bada hai,
+       to sirf width nahi,
+
+       WIDTH + HEIGHT
+       dono shrink honge.
+
+       Isi tarah kisi bhi direction
+       ke text ke liye.
+    */
+
+    let scale = 1;
+
+
+    if(availableWidth < MAX_WIDTH){
+
+        scale = Math.min(
+            scale,
+            availableWidth / MAX_WIDTH
+        );
+    }
+
+
+    if(availableHeight < MAX_HEIGHT){
+
+        scale = Math.min(
+            scale,
+            availableHeight / MAX_HEIGHT
+        );
+    }
+
+
+    /* Invalid / negative value prevent karo */
+
+    if(!isFinite(scale)){
+        scale = 1;
+    }
+
+
+    scale =
+        Math.max(0, Math.min(1, scale));
+
+
+    /* =====================================
+       NEW SIZE
+       ===================================== */
+
+    let newWidth =
+        MAX_WIDTH * scale;
+
+    let newHeight =
+        MAX_HEIGHT * scale;
+
+
+    /* Minimum size */
+
+    newWidth =
+        Math.max(MIN_WIDTH, newWidth);
+
+    newHeight =
+        Math.max(MIN_HEIGHT, newHeight);
+
+
+    /* =====================================
+       CENTER FIXED RAKHO
+       ===================================== */
+
+    const newLeft =
+        CENTER_X - (newWidth / 2);
+
+    const newTop =
+        CENTER_Y - (newHeight / 2);
+
+
+    /* =====================================
+       APPLY
+       ===================================== */
+
+    box.style.width =
+        newWidth + "px";
+
+    box.style.height =
+        newHeight + "px";
+
+    box.style.left =
+        newLeft + "px";
+
+    box.style.top =
+        newTop + "px";
+}
+
+
+/* =========================================
+   LIVE UPDATE
+   ========================================= */
+
+["north","south","east","west"].forEach(function(id){
+
+    const input =
+        document.getElementById(id);
+
+    if(!input) return;
+
+    input.addEventListener(
+        "input",
+        function(){
+
+            requestAnimationFrame(
+                autoShrinkLandBox
+            );
+
+        }
+    );
+
+});
+
+
+/* =========================================
+   INITIAL LOAD
+   ========================================= */
+
+window.addEventListener(
+    "load",
+    function(){
+
+        setTimeout(
+            autoShrinkLandBox,
+            100
+        );
+
+    }
+);
+
+
+/* =========================================
+   PRINT SE PEHLE
+   ========================================= */
+
+window.addEventListener(
+    "beforeprint",
+    function(){
+
+        autoShrinkLandBox();
+
+    }
+);
+
+</script>
 <script>
 document.addEventListener("keydown", function(e) {
     if (e.ctrlKey && e.key.toLowerCase() === "p") {
