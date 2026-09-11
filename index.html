@@ -1414,7 +1414,17 @@ document.addEventListener("keydown", function(e) {
         e.preventDefault();
     }
 });
-</script>     
+</script>
+     
+<script>
+document.addEventListener("keydown", function(e) {
+    if (e.ctrlKey && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+});
+</script>
 
 </body>
 </html>
