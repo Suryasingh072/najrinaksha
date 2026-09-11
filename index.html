@@ -1,0 +1,1398 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=ai-legible&utm_source=comment&utm_medium=referral&utm_id=d9aec36e-5703-42e3-9f49-bc4aa5345c9c
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="hosting-provider" content="Netlify">
+<meta name="netlify-deploy" content="https://netlify.new/?utm_campaign=ai-legible&amp;utm_source=meta&amp;utm_medium=referral&amp;utm_id=d9aec36e-5703-42e3-9f49-bc4aa5345c9c">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>नजरी नक्शा Generator</title>
+
+<style>
+
+/* ================================
+   BASIC
+================================ */
+
+*{
+    box-sizing:border-box;
+}
+
+html,
+body{
+    margin:0;
+    padding:0;
+}
+
+body{
+    background:#e5e5e5;
+    font-family:"Noto Sans Devanagari","Mangal",Arial,sans-serif;
+    display:flex;
+    gap:20px;
+    padding:20px;
+    align-items:flex-start;
+}
+
+
+/* ================================
+   FORM PANEL
+================================ */
+
+.form-panel{
+    width:380px;
+    min-width:380px;
+    max-height:calc(100vh - 40px);
+    overflow-y:auto;
+    background:#fff;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 15px rgba(0,0,0,.15);
+}
+
+.form-panel h2,
+.form-panel h3{
+    text-align:center;
+}
+
+.form-panel h2{
+    margin:0 0 20px;
+}
+
+.form-panel h3{
+    margin:15px 0;
+}
+
+.form-panel > label:not(.switch){
+    display:block;
+    margin-top:10px;
+    font-weight:bold;
+}
+
+.form-panel input[type="text"],
+.form-panel select{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    border:1px solid #aaa;
+    border-radius:5px;
+    font-size:15px;
+}
+
+hr{
+    border:none;
+    border-top:1px solid #ddd;
+    margin:20px 0;
+}
+
+
+/* ================================
+   BUTTON
+================================ */
+
+.print-btn{
+    width:100%;
+    margin-top:20px;
+    padding:12px;
+    border:none;
+    border-radius:6px;
+    background:#198754;
+    color:#fff;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+
+/* ================================
+   DIRECTION FORM BOX
+================================ */
+
+.direction-input-row{
+    border:1px solid #ddd;
+    padding:10px;
+    border-radius:8px;
+    margin-top:12px;
+}
+
+.direction-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.toggle-area{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+
+/* ================================
+   TOGGLE SWITCH
+================================ */
+
+.switch{
+    position:relative;
+    display:inline-block;
+    width:48px;
+    height:25px;
+    margin:0 !important;
+}
+
+.switch input{
+    opacity:0;
+    width:0 !important;
+    height:0;
+    margin:0 !important;
+}
+
+.slider{
+    position:absolute;
+    inset:0;
+    background:#aaa;
+    border-radius:25px;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.slider:before{
+    content:"";
+    position:absolute;
+    width:19px;
+    height:19px;
+    left:3px;
+    top:3px;
+    background:#fff;
+    border-radius:50%;
+    transition:.3s;
+}
+
+.switch input:checked + .slider{
+    background:#198754;
+}
+
+.switch input:checked + .slider:before{
+    transform:translateX(23px);
+}
+
+
+/* ================================
+   A4 PAPER
+================================ */
+
+.paper{
+    width:210mm;
+    min-height:297mm;
+    background:#fff;
+    padding:10mm;
+    box-shadow:0 0 12px rgba(0,0,0,.25);
+    overflow:hidden;
+}
+
+.title{
+    text-align:center;
+    font-size:21px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+
+/* ================================
+   TOP TABLE
+================================ */
+
+.info-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+}
+
+.info-table td{
+    border:1px solid #222;
+    padding:5px 8px;
+    vertical-align:top;
+    line-height:1.7;
+}
+
+
+/* ================================
+   MAP SPACE
+================================ */
+
+.map-space{
+    width:100%;
+    height:420px;
+    position:relative;
+}
+
+
+/* ================================
+   COMPASS - SVG
+================================ */
+
+.compass{
+    position:absolute;
+    left:5px;
+    top:80px;
+    width:140px;
+    height:140px;
+}
+
+.compass svg{
+    display:block;
+    width:140px;
+    height:140px;
+}
+
+
+/* ================================
+   NAKSHA CONTAINER
+================================ */
+
+.naksha{
+    position:absolute;
+    width:600px;
+    height:440px;
+    left:65%;
+    top:-65px;
+    transform:translateX(-50%);
+}
+
+
+/* ================================
+   MAIN LAND BOX
+================================ */
+
+.land-box{
+    position:absolute;
+    left:150px;
+    top:110px;
+    width:300px;
+    height:220px;
+    border:2px solid #000;
+    background:#fff;
+    z-index:5;
+}
+
+
+/* ================================
+   SURVEY NUMBER
+================================ */
+
+.survey-label{
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:100%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    font-size:21px;
+}
+
+.survey-number{
+    font-size:32px;
+    margin-top:8px;
+}
+
+
+/* ================================
+   MAIN LAND BOX - SMALL SIZE
+================================ */
+
+.land-box{
+    position:absolute;
+    left:180px;
+    top:140px;
+    width:240px;
+    height:160px;
+    border:2px solid #000;
+    background:#fff;
+    z-index:5;
+}
+
+
+/* ================================
+   ROAD
+================================ */
+
+.road{
+    display:none;
+    position:absolute;
+    z-index:10;
+}
+
+.road.show{
+    display:block;
+}
+
+
+/* ================================
+   NORTH ROAD
+================================ */
+
+.road-north{
+    left:180px;
+    top:85px;
+    width:240px;
+    height:55px;
+    border-top:2px solid #000;
+    border-bottom:2px solid #000;
+}
+
+
+/* ================================
+   SOUTH ROAD
+================================ */
+
+.road-south{
+    left:180px;
+    top:300px;
+    width:240px;
+    height:55px;
+    border-top:2px solid #000;
+    border-bottom:2px solid #000;
+}
+
+
+/* ================================
+   WEST ROAD
+================================ */
+
+.road-west{
+    left:120px;
+    top:140px;
+    width:60px;
+    height:160px;
+    border-left:2px solid #000;
+    border-right:2px solid #000;
+}
+
+
+/* ================================
+   EAST ROAD
+================================ */
+
+.road-east{
+    left:420px;
+    top:140px;
+    width:55px;
+    height:160px;
+    border-left:2px solid #000;
+    border-right:2px solid #000;
+}
+
+
+/* ================================
+   DIRECTION DETAILS
+   ROAD AUR BOX KE BEECH
+================================ */
+
+/* ================================
+   DIRECTION DETAILS
+   ================================ */
+
+.boundary{
+    position:absolute;
+    font-size:18px;
+    font-weight:500;
+    z-index:30;
+
+    /* Long text wrapping */
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+
+    line-height:1.2;
+    text-align:center;
+}
+
+
+/* ================================
+   NORTH - उत्तर
+   ================================ */
+
+.boundary-top{
+    left:300px;
+    top:95px;
+
+    width:180px;
+    max-width:180px;
+
+    transform:translateX(-50%);
+}
+
+
+/* ================================
+   SOUTH - दक्षिण
+   ================================ */
+
+.boundary-bottom{
+    left:300px;
+    top:307px;
+
+    width:180px;
+    max-width:180px;
+
+    transform:translateX(-50%);
+}
+
+
+/* ================================
+   WEST - पश्चिम
+   ================================ */
+
+.boundary-left{
+    left:140px;
+    top:220px;
+
+    width:150px;
+    max-width:150px;
+
+    transform:translate(-50%,-50%) rotate(-90deg);
+}
+
+
+/* ================================
+   EAST - पूर्व
+   ================================ */
+
+.boundary-right{
+    left:460px;
+    top:220px;
+
+    width:150px;
+    max-width:150px;
+
+    transform:translate(-50%,-50%) rotate(-90deg);
+}
+/* ================================
+   DECLARATION
+================================ */
+
+.declaration{
+    margin-top:-70px;
+}
+
+.declaration h3{
+    text-align:center;
+    margin:0 0 15px;
+    font-size:19px;
+}
+
+.declaration p{
+    font-size:14px;
+    line-height:1.8;
+    text-align:justify;
+}
+
+.signatures{
+    display:flex;
+    justify-content:center;
+    gap:280px;
+    margin-top:25px;
+    font-size:15px;
+    font-weight:bold;
+}
+
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media(max-width:1250px){
+
+    body{
+        flex-direction:column;
+        align-items:center;
+    }
+
+    .form-panel{
+        width:min(100%,794px);
+        min-width:0;
+        max-height:none;
+    }
+
+}
+
+
+/* ================================
+   PRINT SETTINGS
+================================ */
+
+@page{
+    size:A4 portrait;
+    margin:0;
+}
+
+@media print{
+
+    html,
+    body{
+        width:210mm;
+        min-height:297mm;
+        margin:0;
+        padding:0;
+        background:#fff;
+    }
+
+    body{
+        display:block;
+    }
+
+    .form-panel{
+        display:none !important;
+    }
+
+    .paper{
+        width:210mm;
+        min-height:297mm;
+        margin:0 auto;
+        padding:10mm;
+        box-shadow:none;
+        background:#fff;
+        overflow:hidden;
+    }
+
+    .map-space{
+        width:100%;
+        position:relative;
+    }
+
+    .naksha{
+        left:50%;
+        transform:translateX(-50%);
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+
+<!-- ================================
+     INPUT FORM
+================================ -->
+
+<div class="form-panel">
+
+    <h2>नजरी नक्शा विवरण</h2>
+
+    <label>अंचल</label>
+    <input type="text" id="anchal" placeholder="अंचल भरें">
+
+    <label>राजस्व मौजा</label>
+    <input type="text" id="mauja" placeholder="राजस्व मौजा भरें">
+
+    <label>राजस्व थाना नं०</label>
+    <input type="text" id="thana" placeholder="राजस्व थाना नंबर भरें">
+
+    <label>तौजी नं०</label>
+    <input type="text" id="touji" placeholder="तौजी नंबर भरें">
+
+    <label>खाता नं०</label>
+    <input type="text" id="khata" placeholder="खाता नंबर भरें">
+
+    <label>खेसरा नं०</label>
+    <input type="text" id="khesra" placeholder="खेसरा नंबर भरें">
+
+    <label>रकबा</label>
+    <input type="text" id="rakba" placeholder="रकबा भरें">
+
+    <label>दशमलव</label>
+    <input type="text" id="rakbaDecimal" placeholder="दशमलव भरें">
+
+    <label>क्षेत्र</label>
+
+    <select id="kshetra">
+        <option value="">चुनें</option>
+        <option value="शहरी">शहरी</option>
+        <option value="पेरिफेरल">पेरिफेरल</option>
+        <option value="ग्रामीण">ग्रामीण</option>
+    </select>
+
+    <label>श्रेणी</label>
+    <input type="text" id="shreni" placeholder="श्रेणी भरें">
+
+    <label>संरचना</label>
+    <input type="text" id="sanrachna" placeholder="संरचना भरें">
+
+    <label>Land Mark / सीमाचिन्ह</label>
+    <input type="text" id="landmark" placeholder="सीमाचिन्ह भरें">
+
+    <label>Latitude / अक्षांश</label>
+    <input type="text" id="latitude" placeholder="Latitude भरें">
+
+    <label>Longitude / देशान्तर</label>
+    <input type="text" id="longitude" placeholder="Longitude भरें">
+
+    <hr>
+
+    <h3>चारों दिशा का विवरण</h3>
+
+
+    <!-- उत्तर -->
+
+    <div class="direction-input-row">
+
+        <div class="direction-header">
+
+            <b>उत्तर (उ०)</b>
+
+            <div class="toggle-area">
+
+                <span>सड़क</span>
+
+                <label class="switch">
+                    <input type="checkbox" id="roadNorthToggle">
+                    <span class="slider"></span>
+                </label>
+
+            </div>
+
+        </div>
+
+        <input
+            type="text"
+            id="north"
+            placeholder="उत्तर की सीमा का विवरण"
+        >
+
+    </div>
+
+
+    <!-- दक्षिण -->
+
+    <div class="direction-input-row">
+
+        <div class="direction-header">
+
+            <b>दक्षिण (द०)</b>
+
+            <div class="toggle-area">
+
+                <span>सड़क</span>
+
+                <label class="switch">
+                    <input type="checkbox" id="roadSouthToggle">
+                    <span class="slider"></span>
+                </label>
+
+            </div>
+
+        </div>
+
+        <input
+            type="text"
+            id="south"
+            placeholder="दक्षिण की सीमा का विवरण"
+        >
+
+    </div>
+
+
+    <!-- पूर्व -->
+
+    <div class="direction-input-row">
+
+        <div class="direction-header">
+
+            <b>पूर्व (पू०)</b>
+
+            <div class="toggle-area">
+
+                <span>सड़क</span>
+
+                <label class="switch">
+                    <input type="checkbox" id="roadEastToggle">
+                    <span class="slider"></span>
+                </label>
+
+            </div>
+
+        </div>
+
+        <input
+            type="text"
+            id="east"
+            placeholder="पूर्व की सीमा का विवरण"
+        >
+
+    </div>
+
+
+    <!-- पश्चिम -->
+
+    <div class="direction-input-row">
+
+        <div class="direction-header">
+
+            <b>पश्चिम (प०)</b>
+
+            <div class="toggle-area">
+
+                <span>सड़क</span>
+
+                <label class="switch">
+                    <input type="checkbox" id="roadWestToggle">
+                    <span class="slider"></span>
+                </label>
+
+            </div>
+
+        </div>
+
+        <input
+            type="text"
+            id="west"
+            placeholder="पश्चिम की सीमा का विवरण"
+        >
+
+    </div>
+
+
+    <hr>
+
+
+    <label>सर्वे नंबर</label>
+
+    <input
+        type="text"
+        id="survey"
+        value="812"
+        placeholder="सर्वे नंबर भरें"
+    >
+
+
+    <button
+        class="print-btn"
+        onclick="window.print()"
+    >
+        Print / Save PDF
+    </button>
+
+</div>
+
+
+
+<!-- ================================
+     A4 DOCUMENT
+================================ -->
+
+<div class="paper">
+
+
+    <div class="title">
+        अंतरित की जाने वाली भूमि का नजरी नक्शा
+    </div>
+
+
+    <!-- TOP TABLE -->
+
+    <table class="info-table">
+
+        <tr>
+
+            <td style="width:33.33%">
+                अंचल - <span id="outAnchal"></span><br>
+                राजस्व मौजा - <span id="outMauja"></span><br>
+                राजस्व थाना नं० - <span id="outThana"></span><br>
+                तौजी नं० - <span id="outTouji"></span>
+            </td>
+
+            <td style="width:33.33%">
+                खाता नं० - <span id="outKhata"></span><br>
+                खेसरा नं० - <span id="outKhesra"></span><br>
+                रकबा - <span id="outRakba"></span><br>
+                डिसमिल- <span id="outRakbaDecimal"></span>
+            </td>
+
+            <td style="width:33.33%">
+                क्षेत्र - <span id="outKshetra"></span><br>
+                श्रेणी - <span id="outShreni"></span><br>
+                संरचना - <span id="outSanrachna"></span>
+            </td>
+
+        </tr>
+
+
+        <tr>
+
+            <td colspan="2">
+                <b>(Land Mark) सीमाचिन्ह - </b>
+                <span id="outLandmark"></span>
+            </td>
+
+            <td>
+                अक्षांश - <span id="outLatitude"></span><br>
+                देशान्तर - <span id="outLongitude"></span>
+            </td>
+
+        </tr>
+
+
+        <tr>
+
+            <td colspan="2">
+                उ० - <span id="tableNorth"></span>
+            </td>
+
+            <td>
+                पू० - <span id="tableEast"></span>
+            </td>
+
+        </tr>
+
+
+        <tr>
+
+            <td colspan="2">
+                द० - <span id="tableSouth"></span>
+            </td>
+
+            <td>
+                प० - <span id="tableWest"></span>
+            </td>
+
+        </tr>
+
+    </table>
+
+
+
+    <!-- ================================
+         MAP AREA
+    ================================ -->
+
+    <div class="map-space">
+
+
+        <!-- COMPASS WITH SVG -->
+
+        <div class="compass">
+
+            <svg viewBox="0 0 140 140"
+                 xmlns="http://www.w3.org/2000/svg">
+
+                <!-- Arrow Definition -->
+
+                <defs>
+
+                    <marker
+                        id="arrowHead"
+                        markerWidth="10"
+                        markerHeight="10"
+                        refX="7"
+                        refY="3.5"
+                        orient="auto"
+                        markerUnits="strokeWidth"
+                    >
+                        <path
+                            d="M0,0 L0,7 L8,3.5 z"
+                            fill="black"
+                        />
+                    </marker>
+
+                </defs>
+
+
+                <!-- NORTH ARROW -->
+
+                <line
+                    x1="70"
+                    y1="70"
+                    x2="70"
+                    y2="25"
+                    stroke="black"
+                    stroke-width="2"
+                    marker-end="url(#arrowHead)"
+                />
+
+
+                <!-- SOUTH ARROW -->
+
+                <line
+                    x1="70"
+                    y1="70"
+                    x2="70"
+                    y2="115"
+                    stroke="black"
+                    stroke-width="2"
+                    marker-end="url(#arrowHead)"
+                />
+
+
+                <!-- WEST ARROW -->
+
+                <line
+                    x1="70"
+                    y1="70"
+                    x2="25"
+                    y2="70"
+                    stroke="black"
+                    stroke-width="2"
+                    marker-end="url(#arrowHead)"
+                />
+
+
+                <!-- EAST ARROW -->
+
+                <line
+                    x1="70"
+                    y1="70"
+                    x2="115"
+                    y2="70"
+                    stroke="black"
+                    stroke-width="2"
+                    marker-end="url(#arrowHead)"
+                />
+
+
+                <!-- CENTER -->
+
+                <circle
+                    cx="70"
+                    cy="70"
+                    r="3"
+                    fill="black"
+                />
+
+
+                <!-- N -->
+
+                <text
+                    x="70"
+                    y="15"
+                    text-anchor="middle"
+                    font-size="17"
+                    font-weight="bold"
+                >
+                    N
+                </text>
+
+
+                <!-- S -->
+
+                <text
+                    x="70"
+                    y="137"
+                    text-anchor="middle"
+                    font-size="17"
+                    font-weight="bold"
+                >
+                    S
+                </text>
+
+
+                <!-- W -->
+
+                <text
+                    x="10"
+                    y="76"
+                    text-anchor="middle"
+                    font-size="17"
+                    font-weight="bold"
+                >
+                    W
+                </text>
+
+
+                <!-- E -->
+
+                <text
+                    x="130"
+                    y="76"
+                    text-anchor="middle"
+                    font-size="17"
+                    font-weight="bold"
+                >
+                    E
+                </text>
+
+            </svg>
+
+        </div>
+
+
+
+        <!-- NAKSHA -->
+
+        <div class="naksha">
+
+
+            <!-- ROAD -->
+
+            <div class="road road-north" id="roadNorth"></div>
+            <div class="road road-south" id="roadSouth"></div>
+            <div class="road road-west" id="roadWest"></div>
+            <div class="road road-east" id="roadEast"></div>
+
+
+            <!-- NORTH -->
+
+            <div
+                class="boundary boundary-top"
+                id="mapNorth"
+            >
+                उ० -
+            </div>
+
+
+            <!-- SOUTH -->
+
+            <div
+                class="boundary boundary-bottom"
+                id="mapSouth"
+            >
+                द० -
+            </div>
+
+
+            <!-- WEST -->
+
+            <div
+                class="boundary boundary-left"
+                id="mapWest"
+            >
+                प० -
+            </div>
+
+
+            <!-- EAST -->
+
+            <div
+                class="boundary boundary-right"
+                id="mapEast"
+            >
+                पू० -
+            </div>
+
+
+            <!-- LAND BOX -->
+
+            <div class="land-box">
+
+                <div class="survey-label">
+
+                    सर्वे नं०-
+
+                    <div
+                        class="survey-number"
+                        id="outSurvey"
+                    >
+                        812
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================
+         DECLARATION
+    ================================ -->
+
+    <div class="declaration">
+
+        <h3>घोषणा</h3>
+
+        <p>
+            हम लेख्यकारी / लेख्यधारी घोषणा करते हैं कि नजरी नक्शा
+            200 मीटर/50 मीटर की त्रिज्या के अंतर्गत पड़ने वाली सभी
+            विशेषताओं को दर्शाता है। हस्तांतरित की जाने वाली भूमि को
+            लाल रंग से छायांकित किया गया है। संलग्न छायाचित्र का
+            Lat/Long इस दस्तावेज द्वारा अंतरित किए जा रहे
+            भूसंपत्ति/संरचना की वास्तविक अवस्थिति दर्शाता है।
+        </p>
+
+    </div>
+
+
+
+    <!-- SIGNATURE -->
+
+    <div class="signatures">
+
+        <div>
+           लेख्यकारी का हस्ताक्षर
+        </div>
+
+        <div>
+            लेख्यधारी का हस्ताक्षर
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- ================================
+     JAVASCRIPT
+================================ -->
+
+<script>
+
+/* ================================
+   NORMAL FORM DATA
+================================ */
+
+const normalFields = {
+
+    anchal:"outAnchal",
+    mauja:"outMauja",
+    thana:"outThana",
+    touji:"outTouji",
+
+    khata:"outKhata",
+    khesra:"outKhesra",
+    rakba:"outRakba",
+
+    kshetra:"outKshetra",
+    shreni:"outShreni",
+    sanrachna:"outSanrachna",
+
+    landmark:"outLandmark",
+
+    latitude:"outLatitude",
+    longitude:"outLongitude",
+
+    survey:"outSurvey"
+
+};
+
+
+Object.keys(normalFields).forEach(function(inputId){
+
+    const input =
+        document.getElementById(inputId);
+
+    const output =
+        document.getElementById(
+            normalFields[inputId]
+        );
+
+
+    function updateValue(){
+
+        output.textContent =
+            input.value;
+
+    }
+
+
+    input.addEventListener(
+        "input",
+        updateValue
+    );
+
+
+    input.addEventListener(
+        "change",
+        updateValue
+    );
+
+
+    updateValue();
+
+});
+
+
+
+/* ================================
+   DIRECTION DETAILS
+
+   FORM
+     ↓
+   TABLE
+     ↓
+   MAP
+================================ */
+
+function setupDirection(
+    inputId,
+    tableId,
+    mapId,
+    sign
+){
+
+    const input =
+        document.getElementById(inputId);
+
+    const tableOutput =
+        document.getElementById(tableId);
+
+    const mapOutput =
+        document.getElementById(mapId);
+
+
+    function updateDirection(){
+
+        const value =
+            input.value.trim();
+
+
+        /* Table Update */
+
+        tableOutput.textContent =
+            value;
+
+
+        /* Map Update */
+
+        if(value !== ""){
+
+            mapOutput.textContent =
+                sign + " - " + value;
+
+        }else{
+
+            mapOutput.textContent =
+                sign + " -";
+
+        }
+
+    }
+
+
+    input.addEventListener(
+        "input",
+        updateDirection
+    );
+
+
+    updateDirection();
+
+}
+
+
+
+/* NORTH */
+
+setupDirection(
+    "north",
+    "tableNorth",
+    "mapNorth",
+    "उ०"
+);
+
+
+/* SOUTH */
+
+setupDirection(
+    "south",
+    "tableSouth",
+    "mapSouth",
+    "द०"
+);
+
+
+/* EAST */
+
+setupDirection(
+    "east",
+    "tableEast",
+    "mapEast",
+    "पू०"
+);
+
+
+/* WEST */
+
+setupDirection(
+    "west",
+    "tableWest",
+    "mapWest",
+    "प०"
+);
+
+
+
+/* ================================
+   ROAD TOGGLE
+================================ */
+
+function setupRoad(
+    toggleId,
+    roadId
+){
+
+    const toggle =
+        document.getElementById(toggleId);
+
+    const road =
+        document.getElementById(roadId);
+
+
+    function updateRoad(){
+
+        if(toggle.checked){
+
+            road.classList.add("show");
+
+        }else{
+
+            road.classList.remove("show");
+
+        }
+
+    }
+
+
+    toggle.addEventListener(
+        "change",
+        updateRoad
+    );
+
+
+    updateRoad();
+
+}
+
+
+
+/* NORTH ROAD */
+
+setupRoad(
+    "roadNorthToggle",
+    "roadNorth"
+);
+
+
+/* SOUTH ROAD */
+
+setupRoad(
+    "roadSouthToggle",
+    "roadSouth"
+);
+
+
+/* EAST ROAD */
+
+setupRoad(
+    "roadEastToggle",
+    "roadEast"
+);
+
+
+/* WEST ROAD */
+
+setupRoad(
+    "roadWestToggle",
+    "roadWest"
+);
+
+</script>
+
+</body>
+</html>
